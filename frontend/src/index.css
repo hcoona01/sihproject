@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+:root {
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #111217;
+  color: #d8d9da;
+  font-family: var(--font-sans);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Compact clean scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #16171c;
+}
+::-webkit-scrollbar-thumb {
+  background: #2c323d;
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3e4654;
+}
+
+/* Grafana-style panel styling */
+.panel-card {
+  background-color: #181b1f;
+  border: 1px solid #22252b;
+}
+
+.panel-card:hover {
+  border-color: #2c323b;
+}
+
+.panel-header {
+  background-color: #1a1d23;
+  border-bottom: 1px solid #22252b;
+}
