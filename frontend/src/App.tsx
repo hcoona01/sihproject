@@ -30,10 +30,9 @@ export const App: React.FC = () => {
   const handleSaveConfig = (newCfg: DashboardConfig) => {
     const updated = saveConfig(newCfg);
     setConfig(updated);
-    addLog('SYSTEM', 'info', `Configuration updated: backend target set to ${updated.backendBaseUrl}`);
+    addLog('SYSTEM', 'info', `Target backend updated to ${updated.backendBaseUrl}`);
   };
 
-  // Find the most recent update across any metric
   const lastUpdatedTimes = [
     stats.temp.lastUpdated?.getTime() ?? 0,
     stats.dist.lastUpdated?.getTime() ?? 0,
@@ -43,9 +42,9 @@ export const App: React.FC = () => {
   const latestTelemetryDate = maxTimestamp > 0 ? new Date(maxTimestamp) : null;
 
   return (
-    <div className="min-h-screen bg-[#06080d] text-slate-100 flex flex-col selection:bg-cyan-500/30 selection:text-cyan-200">
+    <div className="h-screen w-screen overflow-hidden flex flex-col bg-[#111217] text-zinc-200 select-none">
       
-      {/* Station Command Header */}
+      {/* Top Header */}
       <Header
         roverId={activeRoverId}
         overallState={overallState}
@@ -56,21 +55,23 @@ export const App: React.FC = () => {
         lastUpdated={latestTelemetryDate}
       />
 
-      {/* Main Mission Grid */}
-      <main className="flex-1 max-w-[1780px] w-full mx-auto p-4 lg:p-6 space-y-6">
+      {/* Main Viewport Grid (Single-Page, Zero-Scroll) */}
+      <main className="flex-1 min-h-0 p-2 gap-2 flex flex-col md:flex-row overflow-hidden">
         
-        {/* Top Split: Video Telemetry Viewport (Left) + Tactile Controls & Primary Gauges (Right) */}
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+        {/* Left Column: Optics Viewport + Time-series Timeline (56% width) */}
+        <section className="w-full md:w-[56%] flex flex-col gap-2 h-full min-h-0">
           
-          {/* Left / Center: Video Telemetry Viewport (xl:col-span-7) */}
-          <div className="xl:col-span-7 space-y-6 flex flex-col">
+          {/* Top Left: Video / Camera Monitor */}
+          <div className="flex-[3] min-h-0 flex flex-col">
             <VideoViewport
               backendUrl={config.backendBaseUrl}
               roverId={activeRoverId}
               distAhead={stats.dist.current}
             />
+          </div>
 
-            {/* Grafana-style multi-stream correlation timeline chart */}
+          {/* Bottom Left: Multi-stream Correlation Graph */}
+          <div className="flex-[2] min-h-0 flex flex-col">
             <TelemetryHistoryChart
               tempStats={stats.temp}
               distStats={stats.dist}
@@ -78,71 +79,69 @@ export const App: React.FC = () => {
             />
           </div>
 
-          {/* Right: Tactical Command & Telemetry Panels (xl:col-span-5) */}
-          <div className="xl:col-span-5 space-y-6">
-            
-            {/* Rover LED Control Panel */}
+        </section>
+
+        {/* Right Column: Controls, Primary Telemetry, Audit Logs (44% width) */}
+        <section className="w-full md:w-[44%] flex flex-col gap-2 h-full min-h-0">
+          
+          {/* Top Right: Rover LED Control */}
+          <div className="shrink-0">
             <LedControlPanel
               backendUrl={config.backendBaseUrl}
               roverId={activeRoverId}
               onLog={addLog}
             />
-
-            {/* 3 Telemetry Metrics Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-6">
-              {/* Temperature (°C) */}
-              <TemperaturePanel
-                stats={stats.temp}
-                highThreshold={config.highTempThreshold}
-              />
-
-              {/* Distance Ahead (cm) */}
-              <DistancePanel
-                stats={stats.dist}
-                lowThreshold={config.lowDistThreshold}
-              />
-
-              {/* Atmospheric Humidity (% RH) */}
-              <div className="md:col-span-2 xl:col-span-1">
-                <HumidityPanel
-                  stats={stats.humd}
-                  highThreshold={config.highHumdThreshold}
-                />
-              </div>
-            </div>
-
           </div>
 
-        </div>
+          {/* Middle Right: 3 Metric Cards side-by-side */}
+          <div className="grid grid-cols-3 gap-2 shrink-0">
+            {/* Chassis Temperature */}
+            <TemperaturePanel
+              stats={stats.temp}
+              highThreshold={config.highTempThreshold}
+            />
 
-        {/* Bottom Section: Audit Log & Diagnostics */}
-        <div className="w-full">
-          <EventLogPanel logs={logs} onClearLogs={clearLogs} />
-        </div>
+            {/* Obstacle Distance Ahead */}
+            <DistancePanel
+              stats={stats.dist}
+              lowThreshold={config.lowDistThreshold}
+            />
+
+            {/* Atmospheric Humidity */}
+            <HumidityPanel
+              stats={stats.humd}
+              highThreshold={config.highHumdThreshold}
+            />
+          </div>
+
+          {/* Bottom Right: Audit Log Terminal */}
+          <div className="flex-1 min-h-0 flex flex-col">
+            <EventLogPanel logs={logs} onClearLogs={clearLogs} />
+          </div>
+
+        </section>
 
       </main>
 
-      {/* Station Footer */}
-      <footer className="border-t border-slate-900 bg-[#080b12] py-4 px-6 text-xs font-mono text-slate-500">
-        <div className="max-w-[1780px] mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <span className="text-cyan-400 font-semibold">ROVER TELEMETRY TERMINAL</span>
-            <span className="text-slate-700">|</span>
-            <span>ENDPOINTS: /temp, /dist, /humd, /video, /led</span>
-          </div>
+      {/* Slim Status Bar */}
+      <footer className="h-6 px-3 bg-[#16171c] border-t border-[#22252b] flex items-center justify-between text-[10px] font-mono text-zinc-500 shrink-0 select-none">
+        <div className="flex items-center gap-3">
+          <span className="text-zinc-400 font-semibold">ROVER TELEMETRY TERMINAL</span>
+          <span className="text-zinc-700">|</span>
+          <span>SSE: /temp, /dist, /humd</span>
+          <span className="text-zinc-700">|</span>
+          <span>OPTICS: /video</span>
+          <span className="text-zinc-700">|</span>
+          <span>CMD: /led</span>
+        </div>
 
-          <div className="flex items-center gap-4 text-[11px]">
-            <span className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-              <span>SSE PROTOCOL ACTIVE</span>
-            </span>
-            <span className="text-slate-700">•</span>
-            <span>ZERO-POLLING REALTIME ARCHITECTURE</span>
-          </div>
+        <div className="flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+          <span>EVENT-DRIVEN STREAMING (ZERO POLLING)</span>
         </div>
       </footer>
 
-      {/* Configuration Modal */}
+      {/* Settings Modal */}
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}

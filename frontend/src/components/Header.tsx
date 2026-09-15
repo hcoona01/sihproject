@@ -1,14 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { 
-  Radio, 
   Wifi, 
   WifiOff, 
   RefreshCw, 
-  Settings as SettingsIcon, 
   Clock, 
-  Cpu, 
-  ShieldAlert,
-  Trash2
+  Trash2,
+  SlidersHorizontal
 } from 'lucide-react';
 import { StreamConnectionState } from '../types/telemetry';
 
@@ -34,7 +31,6 @@ export const Header: React.FC<HeaderProps> = ({
   const [sessionTime, setSessionTime] = useState('00:00:00');
   const [secondsAgo, setSecondsAgo] = useState<number | null>(null);
 
-  // Uptime session counter
   useEffect(() => {
     const start = Date.now();
     const interval = setInterval(() => {
@@ -47,7 +43,6 @@ export const Header: React.FC<HeaderProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  // Time since last packet counter
   useEffect(() => {
     if (!lastUpdated) {
       setSecondsAgo(null);
@@ -62,35 +57,34 @@ export const Header: React.FC<HeaderProps> = ({
     return () => clearInterval(interval);
   }, [lastUpdated]);
 
-  const getStatusBadge = () => {
+  const cleanHost = backendUrl.replace(/^https?:\/\//, '').replace(/\/+$/, '');
+
+  const renderStatus = () => {
     switch (overallState) {
       case 'connected':
         return (
-          <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded text-emerald-400 text-xs font-mono font-medium tracking-wide">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span>LIVE TELEMETRY</span>
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-800/60 text-emerald-400 text-xs font-mono">
+            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span>LIVE</span>
           </div>
         );
       case 'connecting':
         return (
-          <div className="flex items-center gap-2 px-3 py-1 bg-amber-500/10 border border-amber-500/30 rounded text-amber-400 text-xs font-mono font-medium tracking-wide">
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-amber-950/60 border border-amber-800/60 text-amber-400 text-xs font-mono">
             <RefreshCw className="w-3 h-3 animate-spin" />
-            <span>LINKING SSE...</span>
+            <span>CONNECTING</span>
           </div>
         );
       case 'error':
         return (
-          <div className="flex items-center gap-2 px-3 py-1 bg-rose-500/10 border border-rose-500/30 rounded text-rose-400 text-xs font-mono font-medium tracking-wide">
-            <ShieldAlert className="w-3 h-3" />
-            <span>LINK DEGRADED</span>
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-rose-950/60 border border-rose-800/60 text-rose-400 text-xs font-mono">
+            <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+            <span>DISCONNECTED</span>
           </div>
         );
       default:
         return (
-          <div className="flex items-center gap-2 px-3 py-1 bg-slate-800/60 border border-slate-700/50 rounded text-slate-400 text-xs font-mono font-medium tracking-wide">
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-zinc-800/80 border border-zinc-700/60 text-zinc-400 text-xs font-mono">
             <WifiOff className="w-3 h-3" />
             <span>STANDBY</span>
           </div>
@@ -98,100 +92,86 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  const displayRover = roverId ? `ROVER #${roverId}` : 'ROVER-01 (ACTIVE)';
-
   return (
-    <header className="border-b border-slate-800/80 bg-[#090d16]/90 backdrop-blur-md sticky top-0 z-40 px-4 lg:px-6 py-3">
-      <div className="max-w-[1780px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3">
-        
-        {/* Left: Station Identity & Rover Badge */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shadow-inner">
-              <Radio className="w-5 h-5 animate-pulse" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-display font-bold text-sm tracking-wider text-slate-100 uppercase">
-                  ARES Ground Command
-                </span>
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-950/80 text-cyan-400 border border-cyan-800/50">
-                  v2.4
-                </span>
-              </div>
-              <p className="text-[11px] font-mono text-slate-400 flex items-center gap-1.5 truncate max-w-xs md:max-w-md">
-                <span className="text-slate-500">HOST:</span>
-                <span className="text-slate-300 font-mono truncate">{backendUrl.replace('https://', '')}</span>
-              </p>
-            </div>
-          </div>
-
-          <div className="hidden sm:block h-6 w-px bg-slate-800" />
-
-          {/* Active Rover ID Pill */}
-          <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded bg-slate-900/80 border border-slate-800 text-slate-300 text-xs font-mono">
-            <Cpu className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="font-semibold text-slate-200 tracking-wider">{displayRover}</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping-subtle"></span>
-          </div>
+    <header className="h-10 px-3 bg-[#16171c] border-b border-[#22252b] flex items-center justify-between text-xs select-none shrink-0 z-30">
+      
+      {/* Left section: Title & Rover ID */}
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-4 bg-blue-600 rounded-xs"></div>
+          <span className="font-semibold text-slate-200 tracking-wide text-[13px]">
+            ROVER TELEMETRY STATION
+          </span>
         </div>
 
-        {/* Right: Telemetry Clock, Health & Quick Controls */}
-        <div className="flex flex-wrap items-center gap-3">
-          
-          {/* Last packet status */}
-          <div className="hidden lg:flex items-center gap-1.5 text-xs font-mono text-slate-400 bg-slate-900/50 px-2.5 py-1 rounded border border-slate-800/60">
-            <Wifi className="w-3.5 h-3.5 text-cyan-400" />
-            <span>SYNC:</span>
-            {secondsAgo !== null ? (
-              <span className={secondsAgo < 5 ? 'text-emerald-400 font-semibold' : 'text-amber-400'}>
-                {secondsAgo === 0 ? 'NOW' : `${secondsAgo}s ago`}
-              </span>
-            ) : (
-              <span className="text-slate-500">AWAITING FEED</span>
-            )}
-          </div>
+        <span className="text-zinc-600">|</span>
 
-          {/* Mission Elapsed Time (MET) */}
-          <div className="flex items-center gap-1.5 text-xs font-mono bg-slate-900/60 px-2.5 py-1 rounded border border-slate-800 text-slate-300">
-            <Clock className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="text-slate-400">MET:</span>
-            <span className="font-semibold text-cyan-300 tracking-wider">{sessionTime}</span>
-          </div>
+        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#1e2229] border border-[#2c323b] text-zinc-300 font-mono text-[11px]">
+          <span className="text-zinc-500">UNIT:</span>
+          <span className="font-bold text-slate-200">{roverId ? `ROVER #${roverId}` : 'ROVER-01'}</span>
+        </div>
 
-          {/* Status Indicator Badge */}
-          {getStatusBadge()}
+        <div className="hidden md:flex items-center gap-1.5 text-[11px] text-zinc-400 font-mono">
+          <span className="text-zinc-600">TARGET:</span>
+          <span className="text-zinc-300 truncate max-w-[200px]">{cleanHost}</span>
+        </div>
+      </div>
 
-          {/* Action Toolbar */}
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={onReconnect}
-              title="Force Reconnect SSE Streams"
-              className="p-1.5 rounded bg-slate-900/80 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/40 text-slate-300 hover:text-cyan-300 transition-colors focus:outline-none"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-            </button>
+      {/* Right section: Sync, MET, Status & Actions */}
+      <div className="flex items-center gap-3">
+        
+        {/* Packet sync */}
+        <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-mono text-zinc-400">
+          <Wifi className="w-3 h-3 text-zinc-500" />
+          <span className="text-zinc-500">SYNC:</span>
+          {secondsAgo !== null ? (
+            <span className={secondsAgo < 5 ? 'text-emerald-400 font-medium' : 'text-amber-400'}>
+              {secondsAgo === 0 ? 'NOW' : `${secondsAgo}s ago`}
+            </span>
+          ) : (
+            <span className="text-zinc-500">WAITING</span>
+          )}
+        </div>
 
-            <button
-              onClick={onClearHistory}
-              title="Flush Rolling Telemetry Buffer"
-              className="p-1.5 rounded bg-slate-900/80 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/40 text-slate-300 hover:text-amber-300 transition-colors focus:outline-none"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
+        {/* MET clock */}
+        <div className="flex items-center gap-1 text-[11px] font-mono text-zinc-300 bg-[#1e2229] px-2 py-0.5 rounded border border-[#2c323b]">
+          <Clock className="w-3 h-3 text-zinc-500" />
+          <span className="text-zinc-500">MET:</span>
+          <span className="font-medium text-zinc-200">{sessionTime}</span>
+        </div>
 
-            <button
-              onClick={onOpenSettings}
-              title="Station Settings & Endpoint Config"
-              className="p-1.5 rounded bg-slate-900/80 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/40 text-slate-300 hover:text-cyan-300 transition-colors focus:outline-none"
-            >
-              <SettingsIcon className="w-3.5 h-3.5" />
-            </button>
-          </div>
+        {/* Connection status badge */}
+        {renderStatus()}
 
+        {/* Action buttons */}
+        <div className="flex items-center gap-1 border-l border-zinc-800 pl-2">
+          <button
+            onClick={onReconnect}
+            title="Reconnect SSE streams"
+            className="p-1 rounded bg-[#1e2229] hover:bg-[#272b35] border border-[#2c323b] text-zinc-400 hover:text-zinc-200 transition-colors"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            onClick={onClearHistory}
+            title="Clear rolling buffers"
+            className="p-1 rounded bg-[#1e2229] hover:bg-[#272b35] border border-[#2c323b] text-zinc-400 hover:text-zinc-200 transition-colors"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            onClick={onOpenSettings}
+            title="Station Settings"
+            className="p-1 rounded bg-[#1e2229] hover:bg-[#272b35] border border-[#2c323b] text-zinc-400 hover:text-zinc-200 transition-colors"
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+          </button>
         </div>
 
       </div>
+
     </header>
   );
 };

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LineChart, Eye, EyeOff, Layers } from 'lucide-react';
+import { LineChart, Eye, EyeOff } from 'lucide-react';
 import { MetricStats, TelemetryDataPoint } from '../types/telemetry';
 
 interface TelemetryHistoryChartProps {
@@ -17,24 +17,21 @@ export const TelemetryHistoryChart: React.FC<TelemetryHistoryChartProps> = ({
   const [showDist, setShowDist] = useState(true);
   const [showHumd, setShowHumd] = useState(true);
 
-  // Normalize data points across all 3 streams into a synchronized timeline
-  // Collect all unique timestamps or use the longest history buffer
   const maxLen = Math.max(
     tempStats.history.length,
     distStats.history.length,
     humdStats.history.length
   );
 
-  const width = 800;
-  const height = 220;
-  const padLeft = 45;
-  const padRight = 20;
-  const padTop = 15;
-  const padBottom = 25;
+  const width = 700;
+  const height = 150;
+  const padLeft = 35;
+  const padRight = 15;
+  const padTop = 10;
+  const padBottom = 20;
   const chartW = width - padLeft - padRight;
   const chartH = height - padTop - padBottom;
 
-  // Helper to build normalized path for a metric series
   const buildSeriesPoints = (history: TelemetryDataPoint[], minVal: number, maxVal: number) => {
     if (history.length < 2) return '';
     const range = maxVal - minVal === 0 ? 1 : maxVal - minVal;
@@ -46,7 +43,6 @@ export const TelemetryHistoryChart: React.FC<TelemetryHistoryChartProps> = ({
     }).join(' ');
   };
 
-  // Find ranges
   const getRange = (history: TelemetryDataPoint[], defaultMin: number, defaultMax: number) => {
     if (history.length === 0) return { min: defaultMin, max: defaultMax };
     const vals = history.map((h) => h.value);
@@ -65,134 +61,115 @@ export const TelemetryHistoryChart: React.FC<TelemetryHistoryChartProps> = ({
   const humdPoints = buildSeriesPoints(humdStats.history, humdRange.min, humdRange.max);
 
   return (
-    <div className="flex flex-col bg-[#0b0f19] border border-slate-800/90 hover:border-slate-700/80 rounded-xl overflow-hidden shadow-xl">
-      {/* Chart Top Bar */}
-      <div className="flex flex-wrap items-center justify-between px-4 py-2.5 bg-slate-900/80 border-b border-slate-800/80 font-mono text-xs gap-2">
-        <div className="flex items-center gap-2">
-          <div className="p-1 rounded bg-slate-800 text-cyan-400 border border-slate-700">
-            <LineChart className="w-3.5 h-3.5" />
-          </div>
-          <span className="font-semibold text-slate-200 tracking-wider">MULTI-STREAM CORRELATION TIMELINE</span>
-          <span className="text-[10px] text-slate-500 font-mono hidden sm:inline">| GRAFANA-STYLE SYNCHRONIZED RUN</span>
+    <div className="panel-card rounded-md overflow-hidden flex flex-col flex-1 min-h-[140px]">
+      {/* Header */}
+      <div className="panel-header h-7 px-3 flex items-center justify-between text-xs font-mono select-none shrink-0">
+        <div className="flex items-center gap-1.5">
+          <LineChart className="w-3.5 h-3.5 text-zinc-400" />
+          <span className="font-semibold text-zinc-200">TELEMETRY TIMELINE</span>
+          <span className="text-[10px] text-zinc-500 hidden sm:inline">| GRAFANA RUN</span>
         </div>
 
         {/* Series Toggles */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => setShowTemp(!showTemp)}
-            className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono border transition-all ${
-              showTemp ? 'bg-cyan-950/70 border-cyan-500/50 text-cyan-300' : 'bg-slate-900 border-slate-800 text-slate-500'
+            className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono border transition-all ${
+              showTemp ? 'bg-[#22252b] border-[#f2994a]/60 text-[#f2994a]' : 'bg-[#181b1f] border-[#22252b] text-zinc-600'
             }`}
           >
-            {showTemp ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-            <span>TEMP (°C)</span>
+            {showTemp ? <Eye className="w-2.5 h-2.5" /> : <EyeOff className="w-2.5 h-2.5" />}
+            <span>TEMP</span>
           </button>
 
           <button
             onClick={() => setShowDist(!showDist)}
-            className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono border transition-all ${
-              showDist ? 'bg-emerald-950/70 border-emerald-500/50 text-emerald-300' : 'bg-slate-900 border-slate-800 text-slate-500'
+            className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono border transition-all ${
+              showDist ? 'bg-[#22252b] border-[#73bf69]/60 text-[#73bf69]' : 'bg-[#181b1f] border-[#22252b] text-zinc-600'
             }`}
           >
-            {showDist ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-            <span>DIST (cm)</span>
+            {showDist ? <Eye className="w-2.5 h-2.5" /> : <EyeOff className="w-2.5 h-2.5" />}
+            <span>DIST</span>
           </button>
 
           <button
             onClick={() => setShowHumd(!showHumd)}
-            className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono border transition-all ${
-              showHumd ? 'bg-blue-950/70 border-blue-500/50 text-blue-300' : 'bg-slate-900 border-slate-800 text-slate-500'
+            className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono border transition-all ${
+              showHumd ? 'bg-[#22252b] border-[#5794f2]/60 text-[#5794f2]' : 'bg-[#181b1f] border-[#22252b] text-zinc-600'
             }`}
           >
-            {showHumd ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-            <span>HUMD (%)</span>
+            {showHumd ? <Eye className="w-2.5 h-2.5" /> : <EyeOff className="w-2.5 h-2.5" />}
+            <span>HUMD</span>
           </button>
         </div>
       </div>
 
-      {/* SVG Canvas Area */}
-      <div className="p-4 relative">
+      {/* SVG Canvas */}
+      <div className="p-2 flex-1 relative flex items-center justify-center">
         {maxLen < 2 ? (
-          <div className="h-48 flex flex-col items-center justify-center border border-dashed border-slate-800/80 rounded-lg text-slate-500 font-mono text-xs space-y-2">
-            <Layers className="w-6 h-6 text-slate-600" />
-            <span>BUFFERING MULTI-STREAM TELEMETRY DATA FROM BACKEND...</span>
+          <div className="text-zinc-600 font-mono text-[11px] select-none">
+            Awaiting streaming data points from SSE...
           </div>
         ) : (
-          <div className="w-full h-52 relative select-none">
+          <div className="w-full h-full min-h-[90px] relative select-none">
             <svg
               viewBox={`0 0 ${width} ${height}`}
               className="w-full h-full"
               preserveAspectRatio="none"
             >
-              {/* Background Grid Lines */}
-              {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+              {[0, 0.5, 1].map((ratio) => {
                 const y = padTop + chartH * ratio;
                 return (
-                  <g key={ratio}>
-                    <line
-                      x1={padLeft}
-                      y1={y}
-                      x2={width - padRight}
-                      y2={y}
-                      stroke="#1e293b"
-                      strokeWidth="1"
-                      strokeDasharray="4 4"
-                    />
-                    <text
-                      x={padLeft - 8}
-                      y={y + 3}
-                      fill="#64748b"
-                      fontSize="9"
-                      textAnchor="end"
-                      fontFamily="var(--font-mono)"
-                    >
-                      {Math.round(100 * (1 - ratio))}%
-                    </text>
-                  </g>
+                  <line
+                    key={ratio}
+                    x1={padLeft}
+                    y1={y}
+                    x2={width - padRight}
+                    y2={y}
+                    stroke="#22252b"
+                    strokeWidth="1"
+                    strokeDasharray="3 3"
+                  />
                 );
               })}
 
-              {/* Time X Axis Base */}
               <line
                 x1={padLeft}
                 y1={padTop + chartH}
                 x2={width - padRight}
                 y2={padTop + chartH}
-                stroke="#334155"
-                strokeWidth="1.5"
+                stroke="#2c323b"
+                strokeWidth="1"
               />
 
-              {/* Temp Series */}
               {showTemp && tempPoints && (
                 <polyline
                   points={tempPoints}
                   fill="none"
-                  stroke="#06b6d4"
-                  strokeWidth="2.5"
+                  stroke="#f2994a"
+                  strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
               )}
 
-              {/* Dist Series */}
               {showDist && distPoints && (
                 <polyline
                   points={distPoints}
                   fill="none"
-                  stroke="#10b981"
-                  strokeWidth="2.5"
+                  stroke="#73bf69"
+                  strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
               )}
 
-              {/* Humd Series */}
               {showHumd && humdPoints && (
                 <polyline
                   points={humdPoints}
                   fill="none"
-                  stroke="#3b82f6"
-                  strokeWidth="2.5"
+                  stroke="#5794f2"
+                  strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
@@ -200,32 +177,26 @@ export const TelemetryHistoryChart: React.FC<TelemetryHistoryChartProps> = ({
             </svg>
           </div>
         )}
+      </div>
 
-        {/* Legend Ribbon */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mt-3 pt-3 border-t border-slate-800/70 text-xs font-mono">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-0.5 bg-cyan-400"></span>
-              <span className="text-slate-400">TEMPERATURE:</span>
-              <strong className="text-cyan-300">{tempStats.current !== null ? `${tempStats.current}°C` : '--'}</strong>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-0.5 bg-emerald-400"></span>
-              <span className="text-slate-400">DISTANCE:</span>
-              <strong className="text-emerald-300">{distStats.current !== null ? `${distStats.current} cm` : '--'}</strong>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-0.5 bg-blue-400"></span>
-              <span className="text-slate-400">HUMIDITY:</span>
-              <strong className="text-blue-300">{humdStats.current !== null ? `${humdStats.current}%` : '--'}</strong>
-            </div>
-          </div>
-
-          <div className="text-[11px] text-slate-500 font-mono">
-            SAMPLING: SSE EVENT-DRIVEN (NON-POLLING)
-          </div>
+      {/* Compact Legend Footer */}
+      <div className="h-6 px-3 bg-[#16171c] border-t border-[#22252b] flex items-center justify-between text-[10px] font-mono text-zinc-500 shrink-0">
+        <div className="flex items-center gap-4">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-0.5 bg-[#f2994a]"></span>
+            <span>TEMP: <strong className="text-zinc-300">{tempStats.current !== null ? `${tempStats.current}°C` : '--'}</strong></span>
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-0.5 bg-[#73bf69]"></span>
+            <span>DIST: <strong className="text-zinc-300">{distStats.current !== null ? `${distStats.current}cm` : '--'}</strong></span>
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-0.5 bg-[#5794f2]"></span>
+            <span>HUMD: <strong className="text-zinc-300">{humdStats.current !== null ? `${humdStats.current}%` : '--'}</strong></span>
+          </span>
+        </div>
+        <div className="hidden sm:inline text-zinc-600">
+          EVENT-DRIVEN SSE
         </div>
       </div>
     </div>
