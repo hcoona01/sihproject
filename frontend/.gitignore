@@ -12,8 +12,6 @@ dist
 dist-ssr
 *.local
 *.tsbuildinfo
-public/*.mov
-public/*.mp4
 
 # Editor directories and files
 .vscode/*
