@@ -15,18 +15,22 @@ interface VideoViewportProps {
   distAhead: number | null;
 }
 
+type StreamMode = 'test' | 'live' | 'standby';
+
 export const VideoViewport: React.FC<VideoViewportProps> = ({
   backendUrl,
   roverId,
   distAhead,
 }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [attemptLiveStream, setAttemptLiveStream] = useState(false);
-  const [streamError, setStreamError] = useState(false);
-  const [streamLoaded, setStreamLoaded] = useState(false);
+  // Default to 'test' so the user's local video plays immediately
+  const [streamMode, setStreamMode] = useState<StreamMode>('test');
+  const [liveStreamError, setLiveStreamError] = useState(false);
+  const [liveStreamLoaded, setLiveStreamLoaded] = useState(false);
   const [timecode, setTimecode] = useState('');
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const videoElementRef = useRef<HTMLVideoElement>(null);
   const videoStreamUrl = getVideoUrl(backendUrl);
 
   useEffect(() => {
@@ -38,6 +42,13 @@ export const VideoViewport: React.FC<VideoViewportProps> = ({
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Ensure video element plays when in test mode
+  useEffect(() => {
+    if (streamMode === 'test' && videoElementRef.current) {
+      videoElementRef.current.play().catch(() => {});
+    }
+  }, [streamMode]);
 
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
@@ -75,15 +86,25 @@ export const VideoViewport: React.FC<VideoViewportProps> = ({
         <div className="flex items-center gap-2">
           {/* Status badge */}
           <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#1e2229] border border-[#2c323b] text-[10px]">
-            {attemptLiveStream && streamLoaded ? (
+            {streamMode === 'test' ? (
               <>
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                <span className="text-emerald-400 font-medium">STREAMING</span>
+                <span className="text-emerald-400 font-medium">TEST FEED ACTIVE</span>
               </>
-            ) : attemptLiveStream && streamError ? (
+            ) : streamMode === 'live' && liveStreamLoaded ? (
+              <>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                <span className="text-emerald-400 font-medium">LIVE BACKEND</span>
+              </>
+            ) : streamMode === 'live' && liveStreamError ? (
               <>
                 <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
                 <span className="text-rose-400 font-medium">FEED ERROR</span>
+              </>
+            ) : streamMode === 'live' ? (
+              <>
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                <span className="text-amber-400 font-medium">CONNECTING</span>
               </>
             ) : (
               <>
@@ -93,17 +114,37 @@ export const VideoViewport: React.FC<VideoViewportProps> = ({
             )}
           </div>
 
-          {/* Stream toggle button */}
-          <button
-            onClick={() => {
-              setStreamError(false);
-              setStreamLoaded(false);
-              setAttemptLiveStream(!attemptLiveStream);
-            }}
-            className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#1e2229] hover:bg-[#272b35] text-zinc-300 border border-[#2c323b] transition-colors"
-          >
-            {attemptLiveStream ? 'Standby View' : 'Connect /video'}
-          </button>
+          {/* Source Selector Buttons */}
+          <div className="flex items-center rounded bg-[#131519] p-0.5 border border-[#22252b] text-[10px]">
+            <button
+              onClick={() => setStreamMode('test')}
+              className={`px-1.5 py-0.5 rounded transition-colors ${
+                streamMode === 'test' ? 'bg-[#272b35] text-emerald-300 font-semibold' : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              Test Video
+            </button>
+            <button
+              onClick={() => {
+                setLiveStreamError(false);
+                setLiveStreamLoaded(false);
+                setStreamMode('live');
+              }}
+              className={`px-1.5 py-0.5 rounded transition-colors ${
+                streamMode === 'live' ? 'bg-[#272b35] text-blue-300 font-semibold' : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              Live /video
+            </button>
+            <button
+              onClick={() => setStreamMode('standby')}
+              className={`px-1.5 py-0.5 rounded transition-colors ${
+                streamMode === 'standby' ? 'bg-[#272b35] text-zinc-300 font-semibold' : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              Standby
+            </button>
+          </div>
 
           {/* Fullscreen Button */}
           <button
@@ -119,23 +160,43 @@ export const VideoViewport: React.FC<VideoViewportProps> = ({
       {/* Main Screen Viewport */}
       <div className="relative flex-1 flex items-center justify-center bg-[#0d0e12] overflow-hidden min-h-[160px]">
         
-        {attemptLiveStream ? (
+        {/* 1. TEST VIDEO MODE (playing /video.mp4 / /video.mov) */}
+        {streamMode === 'test' && (
+          <div className="relative w-full h-full flex items-center justify-center bg-black">
+            <video
+              ref={videoElementRef}
+              src="/video.mp4"
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="w-full h-full object-contain"
+            >
+              <source src="/video.mp4" type="video/mp4" />
+              <source src="/video.mov" type="video/quicktime" />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        )}
+
+        {/* 2. LIVE STREAM MODE (/video endpoint) */}
+        {streamMode === 'live' && (
           <div className="relative w-full h-full flex items-center justify-center">
             <img
               src={videoStreamUrl}
-              alt="Rover Telemetry Feed"
+              alt="Live Rover Video Feed"
               onLoad={() => {
-                setStreamLoaded(true);
-                setStreamError(false);
+                setLiveStreamLoaded(true);
+                setLiveStreamError(false);
               }}
               onError={() => {
-                setStreamLoaded(false);
-                setStreamError(true);
+                setLiveStreamLoaded(false);
+                setLiveStreamError(true);
               }}
-              className={`w-full h-full object-contain ${streamLoaded && !streamError ? 'block' : 'hidden'}`}
+              className={`w-full h-full object-contain ${liveStreamLoaded && !liveStreamError ? 'block' : 'hidden'}`}
             />
 
-            {streamError && (
+            {liveStreamError && (
               <div className="flex flex-col items-center justify-center text-center p-4 space-y-2">
                 <AlertCircle className="w-6 h-6 text-rose-400" />
                 <div className="text-xs font-mono font-medium text-rose-400">NO VIDEO STREAM ON /video</div>
@@ -144,8 +205,8 @@ export const VideoViewport: React.FC<VideoViewportProps> = ({
                 </div>
                 <button
                   onClick={() => {
-                    setStreamError(false);
-                    setStreamLoaded(false);
+                    setLiveStreamError(false);
+                    setLiveStreamLoaded(false);
                   }}
                   className="px-2.5 py-1 rounded bg-[#1e2229] hover:bg-[#272b35] text-xs font-mono text-zinc-300 border border-[#2c323b] inline-flex items-center gap-1.5"
                 >
@@ -155,27 +216,29 @@ export const VideoViewport: React.FC<VideoViewportProps> = ({
               </div>
             )}
 
-            {!streamLoaded && !streamError && (
+            {!liveStreamLoaded && !liveStreamError && (
               <div className="flex flex-col items-center justify-center text-center p-4 space-y-2">
                 <RefreshCw className="w-5 h-5 text-blue-400 animate-spin" />
-                <span className="font-mono text-xs text-zinc-400">CONNECTING VIDEO FEED...</span>
+                <span className="font-mono text-xs text-zinc-400">CONNECTING TO /video STREAM...</span>
               </div>
             )}
           </div>
-        ) : (
-          /* Utilitarian Standby Viewport */
+        )}
+
+        {/* 3. STANDBY MODE */}
+        {streamMode === 'standby' && (
           <div className="relative w-full h-full flex flex-col items-center justify-center p-4 select-none text-center">
             <VideoOff className="w-8 h-8 text-zinc-600 mb-2" />
             <div className="font-mono text-xs font-semibold text-zinc-400 tracking-wider">
               VIDEO FEED STANDBY
             </div>
             <div className="text-[11px] font-mono text-zinc-600 mt-1 max-w-sm">
-              Camera is in standby. Click "Connect /video" when camera hardware is transmitting.
+              Camera optics idle. Select "Test Video" or "Live /video" above.
             </div>
           </div>
         )}
 
-        {/* Clean, non-distracting telemetry overlay bar */}
+        {/* Telemetry overlay bar */}
         <div className="absolute top-2 left-2 px-2 py-1 rounded bg-[#111217]/90 border border-[#22252b] text-[10px] font-mono text-zinc-400 flex items-center gap-3 pointer-events-none">
           <span>UTC: <strong className="text-zinc-200">{timecode}</strong></span>
           <span>RANGE: <strong className={distAhead !== null && distAhead < 30 ? 'text-amber-400' : 'text-emerald-400'}>
@@ -184,7 +247,7 @@ export const VideoViewport: React.FC<VideoViewportProps> = ({
         </div>
 
         <div className="absolute top-2 right-2 px-2 py-1 rounded bg-[#111217]/90 border border-[#22252b] text-[10px] font-mono text-zinc-400 pointer-events-none">
-          SOURCE: <span className="text-zinc-300">/video</span>
+          FEED: <span className="text-zinc-200 font-semibold uppercase">{streamMode}</span>
         </div>
 
       </div>
@@ -192,10 +255,12 @@ export const VideoViewport: React.FC<VideoViewportProps> = ({
       {/* Viewport Info Footer */}
       <div className="h-6 px-3 bg-[#16171c] border-t border-[#22252b] flex items-center justify-between text-[10px] font-mono text-zinc-500 shrink-0">
         <div className="truncate">
-          URL: <span className="text-zinc-400">{videoStreamUrl}</span>
+          SOURCE: <span className="text-zinc-400">
+            {streamMode === 'test' ? '/video.mp4 (Local Loop)' : streamMode === 'live' ? videoStreamUrl : 'STANDBY'}
+          </span>
         </div>
         <div>
-          STATUS: <span className="text-zinc-300">{attemptLiveStream ? 'FEED REQUESTED' : 'STANDBY'}</span>
+          STATUS: <span className="text-zinc-300 font-semibold uppercase">{streamMode}</span>
         </div>
       </div>
     </div>
